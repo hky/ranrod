@@ -1,0 +1,59 @@
+#! /usr/bin/env python
+#                         _______
+#   ____________ _______ _\__   /_________       ___  _____
+#  |    _   _   \   _   |   ____\   _    /      |   |/  _  \
+#  |    /   /   /   /   |  |     |  /___/   _   |   |   /  /
+#  |___/___/   /___/____|________|___   |  |_|  |___|_____/
+#          \__/                     |___|
+#
+
+__author__    = 'Wijnand Modderman-Lenstra'
+__email__     = 'maze@pyth0n.org'
+__copyright__ = 'Copyright 2011, maze.io labs'
+__license__   = 'MIT'
+
+
+import os
+from ranrod.config import Config
+from ranrod.repository import Repository
+
+
+def run():
+    import optparse
+
+    parser = optparse.OptionParser()
+    parser.add_option('-c', '--config', dest='config',
+        default='etc/ranrod.cfg',
+        help='location of the main configuration file')
+
+    options, args = parser.parse_args()
+
+    # Parse main configuration
+    config = Config(options.config)
+
+    # Parse devices configuration
+    devices_file = config.get('paths', 'devices')
+    if not devices_file.startswith('/'):
+        devices_file = os.path.join(os.path.dirname(options.config), devices_file)
+    devices_config = Config(devices_file)
+
+    # Parse repository configuration
+    repository_file = config.get('paths', 'repository')
+    if not repository_file.startswith('/'):
+        repository_file = os.path.join(os.path.dirname(options.config), repository_file)
+    repository_config = Config(repository_file)
+
+    # Setup repository
+    repository_section = repository_config.get_section('repository')
+    if not repository_section.get('path').startswith('/'):
+        repository_section['path'] = os.path.join(os.path.dirname(options.config),
+            repository_section['path'])
+    repository = Repository(**repository_section)
+
+    return 0
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(run())
+

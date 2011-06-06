@@ -1,0 +1,6 @@
+; Read from template
+< repository/template.cfg
+
+[repository]
+@template:git
+path            = ../repository

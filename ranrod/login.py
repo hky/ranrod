@@ -17,6 +17,11 @@ class Login(object):
         telnet  = 23,
     )
     klass = dict()
+    defaults = dict(
+        prompt_user     = re.compile(r'>\s*'),
+        prompt_admin    = re.compile(r'#\s*'),
+        prompt_password = re.compile(r'password\s*:', re.I),
+    )
 
     def __init__(self, device, address, username, password, prompt_user, prompt_admin, **extra):
         self.device = device
@@ -26,6 +31,10 @@ class Login(object):
         self.prompt_user = prompt_user
         self.prompt_admin = prompt_admin
         self.extra = extra.copy()
+
+    @property
+    def is_admin(self):
+        return False
 
     @staticmethod
     def attempt(config, method):
@@ -49,21 +58,55 @@ class Login(object):
     def logout(self):
         self.remote.close()
 
-    def wait_for(self, test, timeout=5.0):
-        buffer = ''
+    def wait_for(self, timeout=5.0, *tests):
+        assert tests
+        output = ''
         while True:
             chunk = self.remote.recv(1024)
-            buffer += chunk
-            if test(buffer):
-                return buffer
+            print 'chunk =', repr(chunk)
+            output += chunk
+            for test in tests:
+                filtered = test(output)
+                if filtered is not None:
+                    output = filtered
+                    return output
 
     def wait_for_prompt(self, timeout=5.0):
-        test = lambda buffer: self.prompt_user.search(buffer) or self.prompt_admin.search(buffer)
-        return self.wait_for(test, timeout)
+        def prompt(output):
+            if self.prompt_user.search(output) or \
+                self.prompt_admin.search(output):
+                return output
 
-    def command(self, command):
-        self.remote.send('%s\n' % (command.strip(),))
-        return '\r\n'.join(self.wait_for_prompt().splitlines()[1:-1])
+        return self.wait_for(timeout, prompt)
+
+    def command(self, command, timeout=5.0, echo=False, prompt=False):
+        self.remote.send('%s\r\n' % (command.strip(),))
+        s = int(not echo)
+        e = int(not prompt) * -1
+        return '\r\n'.join(self.wait_for_prompt(timeout=timeout).strip().splitlines()[s:e])
+
+    def enable(self, timeout=5.0):
+        enable = self.extra['commands'].get('generic', 'enable')
+        self.remote.send('%s\r\n' % (enable,))
+
+        prompt_password = self.extra.get('prompt_password', self.defaults['prompt_password'])
+
+        def response(output):
+            output = output.replace(self.extra['password_admin'], '********')
+            last = output.strip().splitlines()[-1]
+
+            # Respond to password prompt
+            if prompt_password.search(last):
+                self.remote.send('%s\r\n' % (self.extra['password_admin'],))
+                return None
+
+            # If we're back at the user/admin prompt we are done
+            if self.prompt_user.search(last) or \
+                self.prompt_admin.search(last):
+                return output
+
+        return self.wait_for(timeout, response)
+        
 
 class Telnet(Login):
     def connect(self):
@@ -89,6 +132,13 @@ class SSH(Login):
         )
         self.remote = self.transport.invoke_shell()
         self.remote.write = lambda self, data: self.send(data)
+
+    @property
+    def is_admin(self):
+        test = self.command('', prompt=True)
+        print test
+        return self.prompt_admin.search(test)
+
 
 # Export classes to Login class
 Login.klass['telnet'] = Telnet

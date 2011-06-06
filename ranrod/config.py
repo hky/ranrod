@@ -26,6 +26,9 @@ class Config(object):
         if parse:
             self.parse()
 
+    def __dict__(self):
+        return self.sections
+
     def __getitem__(self, item):
         return self.sections[item]
 
@@ -76,6 +79,12 @@ class Config(object):
         '''
         if not section in self.sections:
             self.set_section(section, defaults)
+
+    def get_section(self, section):
+        if not section in self.sections:
+            raise ValueError('Section "%s" does not exist.' % (section,))
+        else:
+            return self.sections[section]
 
     def set_section(self, section, defaults=None):
         '''

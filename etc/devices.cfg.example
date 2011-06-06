@@ -1,0 +1,10 @@
+; Read templates
+<devices/templates.cfg
+
+[localhost]
+;
+; Inherits from Linux template
+;
+@template:linux
+username        = ranrod
+password        = 

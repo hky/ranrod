@@ -10,12 +10,15 @@
 
 
 # Device prompt pattern
-prompt(pattern(r'^\S+[>#]$'))
+prompt(pattern(r'^\S*[>#$]$'))
 
 # Record filters
 # - /etc/snmp/snmpd.conf
 filter(r'community (\S+)')
 filter(r'com2sec \S+ \S+ (\S+)')
+
+# Capture version
+capture(r'^Linux (?P<hostname>[-\w_\.]+) (?P<version>2\.(\S+))')
 
 # Establish connection
 with connect(device) as remote:
@@ -28,12 +31,15 @@ with connect(device) as remote:
 
         # Log in procedure
         log('Logging in')
-        expect(r'^[lL]ogin:',
+        expect(r'[lL]ogin:$',
             device.config.username)
-        expect(r'^[pP]assword:',
+        expect(r'^[pP]assword:$',
             device.config.password)
-        expect(r'^Last login:.*',
-            lambda *line: command('export PS1="\u\$ "'))
+        # On PC Linux, we use sudo
+        expect(r'^.sudo. password for',
+            device.config.password_enable)
+        #expect(r'^Last login:.*',
+        #    lambda *line: command('export PS1="\u\$ "'))
     
         # Wait for prompt
         prompt()
@@ -42,18 +48,15 @@ with connect(device) as remote:
         command('export PAGER=/bin/cat')
 
         # Record output
-        record(output, command('/bin/cat /etc/lsb_release'))
+        record(output, command('cat /etc/lsb-release'))
         record(output, command('uname -a'))
         
         # Become privileged user, if configured
         if device.config.enable:
-            # On PC Linux, we use sudo
-            expect(r'^[pP]assword:',
-                device.config.password_enable)
             command('sudo -i')
 
             # Wait for prompt
             prompt()
 
             # Record output
-            record(output, command('/bin/cat /etc/snmp/snmpd.conf'))
+            record(output, command('cat /etc/snmp/snmpd.conf'))

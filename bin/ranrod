@@ -13,8 +13,10 @@ __copyright__ = 'Copyright 2011, maze.io labs'
 __license__   = 'MIT'
 
 
+import glob
 import os
 from ranrod.config import Config
+from ranrod.device import Device
 from ranrod.repository import Repository
 
 
@@ -32,23 +34,48 @@ def run():
     config = Config(options.config)
 
     # Parse devices configuration
-    devices_file = config.get('paths', 'devices')
-    if not devices_file.startswith('/'):
-        devices_file = os.path.join(os.path.dirname(options.config), devices_file)
-    devices_config = Config(devices_file)
+    device_files = []
+    device_paths = config.get('devices', 'load')
+    if type(device_paths) != list:
+        device_paths = [device_paths]
+    for path in device_paths:
+        if not path.startswith('/'):
+            path = os.path.join(os.path.dirname(options.config), path)
+        for filename in glob.glob(path):
+            device_files.append(filename)
 
-    # Parse repository configuration
-    repository_file = config.get('paths', 'repository')
-    if not repository_file.startswith('/'):
-        repository_file = os.path.join(os.path.dirname(options.config), repository_file)
-    repository_config = Config(repository_file)
+    if not device_files:
+        print 'No device configurations found'
+        return 1
 
     # Setup repository
-    repository_section = repository_config.get_section('repository')
+    repository_section = config.get_section('repository')
     if not repository_section.get('path').startswith('/'):
         repository_section['path'] = os.path.join(os.path.dirname(options.config),
             repository_section['path'])
     repository = Repository(**repository_section)
+
+    # Setup devices
+    devices = []
+    for filename in device_files:
+        devices_config = Config(filename)
+        for section in devices_config.get_sections():
+            devices.append(Device(devices_config.get_section(section),
+                section,
+                repository))
+
+    print devices
+    for device in devices:
+        print device
+        model = os.path.join(config.get('devices', 'models'), device.config.model + '.rr')
+        if not model.startswith('/'):
+            model = os.path.join(os.path.dirname(options.config), model)
+        device.config.address = (device.config.hostname, 23)
+        device.parse(model)
+        try:
+            device.remote.close()
+        except:
+            pass
 
     return 0
 

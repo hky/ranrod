@@ -28,6 +28,10 @@ class DeviceError(Exception):
     pass
 
 
+class DeviceConfigError(DeviceError):
+    pass
+
+
 class DeviceDumper(object):
     def __init__(self, device, config={}):
         self.device = device
@@ -35,6 +39,7 @@ class DeviceDumper(object):
 
     def __enter__(self):
         self.device.cmd_log('Device log starting')
+        self.log = self.device.repository.open(self.device.name, 'w')
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
@@ -46,10 +51,13 @@ class DeviceDumper(object):
         self.close()
 
     def close(self):
+        self.log.close()
+        self.device.repository.add(self.log.name)
+        self.device.repository.commit('update')
         self.device.cmd_log('Device log closing')
 
     def write(self, data):
-        print data
+        self.log.write(data)
 
 
 def record(device):
@@ -67,10 +75,18 @@ def record(device):
         @staticmethod
         def filter(pattern, replace=None):
             if not isinstance(pattern, RE_TYPE):
-                pattern = re.compile(pattern)
+                pattern = re.compile(pattern, re.M)
             device.filters.append((pattern, replace))
+        
+        @staticmethod
+        def ignore(pattern):
+            if not isinstance(pattern, RE_TYPE):
+                pattern = re.compile(pattern)
+            device.ignores.append(pattern)
 
         def filtered(self, data):
+            for pattern in device.ignores:
+                data = pattern.sub('', data)
             for pattern, replace in device.filters:
                 for match in pattern.finditer(data):
                     for item in match.groups():
@@ -83,7 +99,7 @@ def record(device):
 def connect(device):
     class DeviceConnect(object):
         def __enter__(self):
-            from client import telnet
+            from ranrod.client import telnet
             device.remote = telnet.Telnet(device.config.address)
             device.remote.connect()
             device.cmd_log('Connected to %r' % (device.config.address,))
@@ -115,10 +131,15 @@ class DeviceConfig(object):
 
 
 class Device(object):
-    def __init__(self, config):
+    def __init__(self, config, name, repository):
         self.config = DeviceConfig(config, True)
+        self.name = name
+        self.repository = repository
+
         self.environ = {}
+        self.capture = {}
         self.filters = []
+        self.ignores = []
         self.expects = {}
         self.prompt = ''
         self.logger = DeviceLogger(self)
@@ -127,9 +148,9 @@ class Device(object):
 
     def __str__(self):
         if self.remote:
-            return 'acme:22 via %s' % (self.remote,)
+            return '[%s] %s' % (self.name, self.remote)
         else:
-            return 'acme:22 (disconnected)'
+            return '[%s] %s (disconnected)' % (self.name, self.config.hostname,)
 
     def parse(self, filename):
         '''
@@ -147,7 +168,7 @@ class Device(object):
         # Reset environment
         self.reset()
         try:
-            eval(code, {}, self.environ)
+            eval(code, self.environ, self.capture)
         except Exception, e:
             # TODO: Handle exception in script
             raise
@@ -165,14 +186,40 @@ class Device(object):
 
             # Functions
             'header':  self.cmd_header,
+            'capture': self.cmd_capture,
             'command': self.cmd_command,
             'connect': self.cmd_connect,
             'record':  self.cmd_record,
             'filter':  self.cmd_filter,
+            'ignore':  self.cmd_ignore,
             'expect':  self.cmd_expect,
             'pattern': self.cmd_pattern,
             'prompt':  self.cmd_prompt,
         })
+    
+    def cmd_capture(self, pattern, *names):
+        '''
+        Allows to capture pattern matches to variables available in the 
+        script.
+        
+        TODO: Also exclude builtins etc.
+        '''
+
+        reserved = []
+        reserved.extend(self.environ.keys())
+        reserved.extend(dir(__builtins__))
+        
+        def capture(line, match):
+            info = match.groupdict()
+            if not info:
+                info = dict(zip(names, match.groups()))
+            for item in info:
+                if not item in reserved:
+                    self.capture[item] = info[item]
+            print self.capture
+        
+        # Register hook
+        self.cmd_expect(pattern, capture)
 
     def cmd_command(self, line):
         '''
@@ -188,15 +235,15 @@ class Device(object):
             output = self.remote.wait_for(self.prompt)
             if output.startswith(line):
                 # Device did not respect our echo off request
-                output = '\n'.join(output.splitlines()[1:])
+                output = '\n'.join(output.splitlines()[1:-1])
 
-            output = ''.join(['%% command: %s\r\n' % (line, ), output])
+            output = ''.join(['%%\r\n%% command: %s\r\n%%\r\n' % (line, ), output])
             return output
         else:
             raise DeviceError('Remote not connected.')
 
-    def cmd_connect(self):
-        return connect(self)
+    def cmd_connect(self, device):
+        return connect(device)
 
     def cmd_expect(self, pattern, func):
         '''
@@ -230,7 +277,7 @@ class Device(object):
         if not isinstance(func, FUNC_TYPE):
             data = func
 
-            def send():
+            def send(*args, **kwargs):
                 self.sendline(data)
 
             func = send
@@ -249,6 +296,12 @@ class Device(object):
         #lambda *a, **kw: self.record.filter(*a, **kw),
         return self.record.filter(pattern, replace)
 
+    def cmd_ignore(self, pattern, flags='m'):
+        '''
+        Filter out lines that match the given ``pattern``.
+        '''
+        return self.record.ignore(self.cmd_pattern(pattern, flags))
+
     def cmd_header(self, remark, comment='%'):
         return '%s\r\n%s RANROD - Device configuration for %s\r\n%s\r\n' % \
             (comment, comment, remark, comment)
@@ -263,10 +316,17 @@ class Device(object):
             >>> pattern(r'm[4a]z[3e]', 'i')
 
         '''
+        if type(pattern) == RE_TYPE:
+            return pattern
+
         re_flags = 0
         for flag in flags:
             re_flags |= getattr(re, flag.upper())
-        return re.compile(pattern, flags)
+        try:
+            return re.compile(pattern, re_flags)
+        except TypeError, e:
+            raise DeviceConfigError('Invalid pattern "%s": %s' % \
+                (pattern, str(e)))
 
     def cmd_prompt(self, pattern=None):
         '''
@@ -290,7 +350,7 @@ class Device(object):
         # Wait for prompt
         else:
             if self.remote:
-                self.remote.wait_for(self.prompt, self.expects)
+                self.remote.wait_for(self.prompt, callbacks=self.expects)
             else:
                 raise DeviceError('Remote not connected.')
 
@@ -299,14 +359,3 @@ class Device(object):
 
     def sendline(self, data, timeout=None):
         self.remote.sendline(data, timeout)
-
-
-if __name__ == '__main__':
-    import sys
-    device = Device({
-        'enable': False,
-        'username': 'ranrod',
-        'password': 'r4nr0d',
-        'address':  ('192.168.213.66', 23),
-    })
-    device.parse(sys.argv[1])

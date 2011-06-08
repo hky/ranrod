@@ -30,7 +30,7 @@ class ClientTimeout(ClientError):
     pass
 
 
-class Client:
+class Client(object):
     defaults = {
         'timeout':  30.0,
         'newlines': [CR + LF, LF + CR, LF],
@@ -100,5 +100,6 @@ class Client:
 
                 # Iterate over possible callbacks
                 for cpattern, callback in callbacks.iteritems():
-                    if cpattern.search(line):
-                        callback()
+                    match = cpattern.search(line)
+                    if match:
+                        callback(line, match)

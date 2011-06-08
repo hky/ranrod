@@ -52,10 +52,15 @@ class Telnet(Client):
         # IAC sequences
         self.IAC = False
         self.IACByte = None
+    
+    def __str__(self):
+        return 'telnet://%s:%d' % tuple(self.address)
 
     def connect(self):
         self.remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.remote.connect(self.address)
+        self.send(IAC, DONT, ECHO)
+        self.send(IAC, WILL, ECHO)
 
     def close(self):
         self.remote.close()
@@ -94,6 +99,7 @@ class Telnet(Client):
 
     def readloop(self, callback, timeout=None):
         timeout = timeout or self.config['timeout']
+        print 'timeout =', timeout
         chunk = ''
 
         try:
@@ -206,11 +212,13 @@ class Telnet(Client):
         # Tell the server not to echo if echoing is enabled
         if feature == ECHO and not self.config['echo']:
             self.send(IAC, DONT, ECHO)
+            self.send(IAC, WONT, ECHO)
 
     def handle_IAC_WONT(self, feature):
         # Tell the server to echo if echoing is disnabled
         if feature == ECHO and self.config['echo']:
             self.send(IAC, DO, ECHO)
+            self.send(IAC, WILL, ECHO)
 
     def debug(self, data):
         HexDump(step=32).dump(data)

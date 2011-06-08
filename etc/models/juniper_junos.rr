@@ -15,6 +15,11 @@ prompt(pattern(r'^\S+[>#]$'))
 filter(r'authentication-key "([^"]+)"')
 filter(r'encrypted-password "([^"]+)"')
 filter(r'community (\S+)')
+ignore(r'^.*(?:Input|Output) packets.*', 'm')
+
+# Capture version
+capture(r'J[uU][nN]OS ([\d\.R]+)', 'version')
+capture(r'Model: (?P<model>\S+)')
 
 # Establish connection
 with connect(device) as remote:

@@ -16,6 +16,7 @@ __license__   = 'MIT'
 import os
 import re
 
+
 class Config(object):
     re_regexp = re.compile(r'^/(?P<regexp>.*)/(?P<flags>[igm]*)')
 
@@ -71,8 +72,9 @@ class Config(object):
                 else:
                     self.sections[section][key] = [exists, value]
             else:
-                raise ValueError('Key "%s" in section "%s" already exists.' % (section, key))
-        
+                raise ValueError('Key "%s" in section "%s" already exists.' % \
+                    (section, key))
+
     def add_section(self, section, defaults=None):
         '''
         Add a ``section`` if it does not exist already.
@@ -85,6 +87,9 @@ class Config(object):
             raise ValueError('Section "%s" does not exist.' % (section,))
         else:
             return self.sections[section]
+
+    def get_sections(self):
+        return [s for s in self.sections if s != 'global']
 
     def set_section(self, section, defaults=None):
         '''
@@ -121,8 +126,8 @@ class Config(object):
                 if line[0] == '[' and line[-1] == ']':
                     section = line[1:-1]
                     if section in self.sections:
-                         raise ValueError('%s[%d]: section "%s" already exists' % (self.filename,
-                            lineno, section))
+                        raise ValueError('%s[%d]: duplicate section "%s"' % \
+                            (self.filename, lineno, section))
                     else:
                         self.add_section(section)
                     continue
@@ -135,14 +140,16 @@ class Config(object):
 
                 # Include
                 if line.startswith('<'):
-                    filename = os.path.join(os.path.dirname(self.filename), line[1:].strip())
+                    filename = os.path.join(os.path.dirname(self.filename),
+                        line[1:].strip())
                     config = Config(filename)
                     if section == 'global':
                         for s in config.sections:
                             self.add_section(s)
                             self.sections[s].update(config.sections[s])
                     else:
-                        self.sections['global'].update(config.sections['global'])
+                        self.sections['global'].update(
+                            config.sections['global'])
                     continue
 
                 # Inherit
@@ -151,7 +158,8 @@ class Config(object):
                     if inherit in self.sections:
                         self.sections[section].update(self.sections[inherit])
                     else:
-                        raise ValueError('%s[%d]: inherited section "%s" not found' % \
+                        error = '%s[%d]: inherited section "%s" not found'
+                        raise ValueError(error % \
                             (self.filename, lineno, inherit))
                     continue
 
@@ -213,4 +221,3 @@ if __name__ == '__main__':
     c = Config(sys.argv[1])
     p = pprint.PrettyPrinter()
     p.pprint(c.sections)
-

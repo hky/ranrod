@@ -11,4 +11,3 @@ __author__    = 'Wijnand Modderman-Lenstra'
 __email__     = 'maze@pyth0n.org'
 __copyright__ = 'Copyright 2011, maze.io labs'
 __license__   = 'MIT'
-

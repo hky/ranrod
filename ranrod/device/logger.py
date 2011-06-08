@@ -12,7 +12,22 @@ __email__     = 'maze@pyth0n.org'
 __copyright__ = 'Copyright 2011, maze.io labs'
 __license__   = 'MIT'
 
-__all__       = ['Device']
+
+import datetime
 
 
-from ranrod.device.base import Device
+class DeviceLogger(object):
+    defaults = {
+        'timestamp': 'blaat',
+    }
+
+    def __init__(self, device, config={}):
+        self.config = self.defaults.copy()
+        self.config.update(config)
+        self.write('Log starting')
+
+    def close(self):
+        self.write('Log closing')
+
+    def write(self, message):
+        print '%s %s' % (datetime.datetime.now(), message)

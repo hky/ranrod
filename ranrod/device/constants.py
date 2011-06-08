@@ -12,7 +12,10 @@ __email__     = 'maze@pyth0n.org'
 __copyright__ = 'Copyright 2011, maze.io labs'
 __license__   = 'MIT'
 
-__all__       = ['Device']
+
+import re
 
 
-from ranrod.device.base import Device
+# Regular Expression type
+RE_TYPE = type(re.compile(r'.'))
+FUNC_TYPE = type(lambda: _)

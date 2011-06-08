@@ -1,0 +1,41 @@
+#! /usr/bin/env ranrod
+# This file is part of RANROD, http://ranrod.net/
+# (c) 2011, Wijnand Modderman-Lenstra, MIT licensed
+#
+# Supported models by this device configuration:
+#
+#  * OpenBSD 4.7
+#  * OpenBSD 4.8
+#
+
+
+# Device prompt pattern
+prompt(pattern(r'^\S+[>#%$]$'))
+
+# Establish connection
+with connect(device) as remote:
+    log('Connected to %s' % (device,))
+
+    # Once connected, record the device's output
+    with dumper(device) as output:
+        # Header
+        record(output, header('PC OpenBSD'))
+
+        # Log in procedure
+        log('Logging in')
+        expect(r'^[lL]ogin:',
+            device.config.username)
+        expect(r'^[pP]assword:',
+            device.config.password)
+    
+        # Wait for prompt
+        prompt()
+    
+        # Disable pager
+        command('export PAGER=/bin/cat')
+
+        # Record output
+        record(output, command('uname -a'))
+        record(output, command('/bin/cat /etc/rc.conf'))
+        record(output, command('/bin/cat /etc/rc.local.conf'))
+        record(output, command('/bin/cat /etc/pf.conf'))

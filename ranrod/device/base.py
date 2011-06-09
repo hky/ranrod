@@ -17,6 +17,8 @@ import datetime
 import parser
 import re
 import traceback
+from ranrod.config import ConfigMap
+from ranrod.client.base import ClientError
 from ranrod.device.constants import *
 from ranrod.device.logger import DeviceLogger
 
@@ -43,17 +45,22 @@ class DeviceDumper(object):
         return self
 
     def __exit__(self, exc_type, exc_value, tb):
-        if exc_type is not None:
+        if exc_type is None:
+            # The while-loop exited normally, add file and commit changes
+            info = dict(message='update', path=self.log.name)
+            self.device.repository.file_add(**info)
+            self.device.repository.file_commit(**info)
+        else:
+            # The while-loop threw an error
             self.device.cmd_log('Fatal error: %s %s' % \
                 (exc_type.__name__, exc_value))
             for line in traceback.format_list(traceback.extract_tb(tb)):
                 self.device.cmd_log(line)
+
         self.close()
 
     def close(self):
         self.log.close()
-        self.device.repository.add(self.log.name)
-        self.device.repository.commit('update')
         self.device.cmd_log('Device log closing')
 
     def write(self, data):
@@ -64,9 +71,13 @@ def record(device):
     class DeviceRecord(object):
         def __init__(self, log, func, wait=False):
             if isinstance(func, type(lambda: _)):
-                log.write(self.filtered(func()))
+                output = func()
             else:
-                log.write(self.filtered(func))
+                output = func
+            
+            # Get rid of funky line endings
+            output = '\n'.join(map(lambda s: s.strip('\r'), output.split('\n')))
+            log.write(self.filtered(output))
 
             # Wait for prompt
             if wait:
@@ -85,13 +96,25 @@ def record(device):
             device.ignores.append(pattern)
 
         def filtered(self, data):
-            for pattern in device.ignores:
-                data = pattern.sub('', data)
-            for pattern, replace in device.filters:
-                for match in pattern.finditer(data):
-                    for item in match.groups():
-                        data = data.replace(item, replace or '*' * 8, 1)
-            return data
+            output = []
+            for line in data.split('\n'):
+                skip = False
+                for pattern in device.ignores:
+                    if pattern.search(data):
+                        skip = True
+                        break
+
+                if skip:
+                    continue
+
+                for pattern, replace in device.filters:
+                    for match in pattern.finditer(line):
+                        for item in match.groups():
+                            line = line.replace(item, replace or '*' * 8, 1)
+                
+                output.append(line)
+
+            return '\n'.join(output)
 
     return DeviceRecord
 
@@ -99,21 +122,25 @@ def record(device):
 def connect(device):
     class DeviceConnect(object):
         def __enter__(self):
-            from ranrod.client import telnet
-            device.remote = telnet.Telnet(device.config.address)
+            print 'Connect', device.config.address
+            device.remote = device.factory(device.config.address, device.config)
             device.remote.connect()
-            device.cmd_log('Connected to %r' % (device.config.address,))
+            device.cmd_log('Connected to %s' % (device.remote,))
 
         def __exit__(self, exc_type, exc_value, tb):
-            device.remote.close()
+            try:
+                device.remote.close()
+                device.cmd_log('Graceful shutdown succeeded')
+            except ClientError, e:
+                device.cmd_log('Graceful shutdown failed: %s' % (str(e),))
 
     return DeviceConnect()
 
 
-class DeviceConfig(object):
-    def __init__(self, config, allow_missing=False):
+class DeviceConfig(ConfigMap):
+    def __init__(self, config={}, allow_missing=False):
+        super(DeviceConfig, self).__init__(config)
         self.allow_missing = allow_missing
-        self.config = dict(config)
 
     def __contains__(self, item):
         return item in self.config
@@ -124,16 +151,17 @@ class DeviceConfig(object):
         elif self.allow_missing:
             return None
         else:
-            raise AttributeError(attr)
+            raise AttributeError('Missing configuration option "%s"' % (attr,))
 
     def __getitem__(self, item):
         return self.config[item]
 
 
 class Device(object):
-    def __init__(self, config, name, repository):
-        self.config = DeviceConfig(config, True)
+    def __init__(self, config, name, factory, repository):
+        self.config = DeviceConfig(config, False)
         self.name = name
+        self.factory = factory
         self.repository = repository
 
         self.environ = {}
@@ -216,8 +244,7 @@ class Device(object):
             for item in info:
                 if not item in reserved:
                     self.capture[item] = info[item]
-            print self.capture
-        
+
         # Register hook
         self.cmd_expect(pattern, capture)
 
@@ -231,13 +258,16 @@ class Device(object):
 
         '''
         if self.remote:
+            self.cmd_log('command: %s' % (line.strip(),))
             self.sendline(line)
-            output = self.remote.wait_for(self.prompt)
+            output = self.remote.wait_for(self.prompt, callbacks=self.expects)
+            s = 0
             if output.startswith(line):
                 # Device did not respect our echo off request
-                output = '\n'.join(output.splitlines()[1:-1])
+                s = 1
+            output = '\n'.join(map(lambda s: s.strip('\r'), output.split('\n')[s:-1]))
 
-            output = ''.join(['%%\r\n%% command: %s\r\n%%\r\n' % (line, ), output])
+            output = '\n'.join(['%', '%% command: %s' % (line, ), '%', output, ''])
             return output
         else:
             raise DeviceError('Remote not connected.')

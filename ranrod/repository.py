@@ -52,36 +52,44 @@ class Repository(object):
         '''
         Execute a shell command.
         '''
-        print 'execute', repr(command), isinstance(command[0], basestring)
         if len(command) == 1 and isinstance(command[0], basestring):
             if type(command[0]) == unicode:
                 command = shlex.split(str(command[0]))
             else:
                 command = shlex.split(command[0])
 
-        print command, shlex.split(command[0])
+        print 'shell:', ' '.join(command)
         pipe = subprocess.Popen(command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         data = pipe.communicate()
         if pipe.returncode > 0:
-            raise RepositoryError(data[1])
+            raise RepositoryError(data[1] or data[0])
         else:
             return data[0]
     
-    def add(self, filename):
-        command = self.extra.get('add') % {
+    def file_add(self, path, message='update'):
+        if not self.extra.get('file-add'):
+            # Repository does not support per-file add (or not required)
+            return
+
+        command = self.extra.get('file-add') % {
             'root': self.path, 
-            'path': filename,
+            'path': path,
+            'message': message,
         }
         print self.execute(command)
-    
-    def commit(self, message, user='ranrod', path=''):
-        command = self.extra.get('commit') % {
+
+    def file_commit(self, path, message, user='ranrod'):
+        if not self.extra.get('file-commit'):
+            # Repository does not support per-file commit (or not required)
+            return
+
+        command = self.extra.get('file-commit') % {
             'root': self.path,
+            'path': path,
             'message': message,
             'user': user,
-            'path': path,
         }
         print self.execute(command)
 

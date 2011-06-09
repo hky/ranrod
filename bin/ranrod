@@ -15,9 +15,18 @@ __license__   = 'MIT'
 
 import glob
 import os
-from ranrod.config import Config
+from ranrod.config import Config, ConfigMap
+from ranrod.client import try_connect
 from ranrod.device import Device
 from ranrod.repository import Repository
+
+
+def fix_path(options, path):
+    if not path.startswith('/'):
+        return os.path.abspath(os.path.join(
+            os.path.dirname(options.config), path))
+    else:
+        return os.path.abspath(path)
 
 
 def run():
@@ -39,8 +48,7 @@ def run():
     if type(device_paths) != list:
         device_paths = [device_paths]
     for path in device_paths:
-        if not path.startswith('/'):
-            path = os.path.join(os.path.dirname(options.config), path)
+        path = fix_path(options, path)
         for filename in glob.glob(path):
             device_files.append(filename)
 
@@ -50,32 +58,21 @@ def run():
 
     # Setup repository
     repository_section = config.get_section('repository')
-    if not repository_section.get('path').startswith('/'):
-        repository_section['path'] = os.path.join(os.path.dirname(options.config),
-            repository_section['path'])
+    repository_section['path'] = fix_path(options, repository_section.get('path'))
     repository = Repository(**repository_section)
 
     # Setup devices
     devices = []
+    model_path = fix_path(options, config.get('devices', 'models'))
     for filename in device_files:
         devices_config = Config(filename)
         for section in devices_config.get_sections():
-            devices.append(Device(devices_config.get_section(section),
-                section,
-                repository))
-
-    print devices
-    for device in devices:
-        print device
-        model = os.path.join(config.get('devices', 'models'), device.config.model + '.rr')
-        if not model.startswith('/'):
-            model = os.path.join(os.path.dirname(options.config), model)
-        device.config.address = (device.config.hostname, 23)
-        device.parse(model)
-        try:
-            device.remote.close()
-        except:
-            pass
+            device_config = ConfigMap(devices_config.get_section(section))
+            print repr(device_config)
+            if not device_config.model.startswith('/'):
+                device_config.model = os.path.join(model_path,
+                    device_config.model + '.rr')
+            remote = try_connect(device_config, section, repository)
 
     return 0
 

@@ -53,10 +53,12 @@ with connect(device) as remote:
         
         # Become privileged user, if configured
         if device.config.enable:
+            log('Switching to enabled mode')
+            prompt(pattern(r'^\S+[#]$'))
             command('sudo -i')
 
             # Wait for prompt
-            prompt()
-
+            log('Wait for prompt')
+            
             # Record output
             record(output, command('cat /etc/snmp/snmpd.conf'))

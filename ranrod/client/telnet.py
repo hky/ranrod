@@ -35,6 +35,8 @@ class Telnet(Client):
 
     '''
 
+    name = 'telnet'
+    port = 23
     defaults = {
         # Tell the server not to echo our input
         'echo':     False,
@@ -52,18 +54,13 @@ class Telnet(Client):
         # IAC sequences
         self.IAC = False
         self.IACByte = None
-    
-    def __str__(self):
-        return 'telnet://%s:%d' % tuple(self.address)
 
     def connect(self):
+        print 'Connecting to', self.address
         self.remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.remote.connect(self.address)
         self.send(IAC, DONT, ECHO)
         self.send(IAC, WILL, ECHO)
-
-    def close(self):
-        self.remote.close()
 
     def echo(self, enabled):
         if enabled:
@@ -74,8 +71,7 @@ class Telnet(Client):
     def send(self, *args, **kwargs):
         data = ''.join(args)
         timeout = kwargs.get('timeout', self.config['timeout'])
-        print '>>>'
-        self.debug(data)
+        #print '>>>'; self.debug(data)
         oldtimeout = self.remote.gettimeout()
         self.remote.settimeout(timeout)
         try:
@@ -93,13 +89,11 @@ class Telnet(Client):
             data = self.remote.recv(size)
         finally:
             self.remote.settimeout(oldtimeout)
-        print '<<<'
-        self.debug(data)
+        #print '<<<'; self.debug(data)
         return data
 
     def readloop(self, callback, timeout=None):
         timeout = timeout or self.config['timeout']
-        print 'timeout =', timeout
         chunk = ''
 
         try:

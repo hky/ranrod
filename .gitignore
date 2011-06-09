@@ -1,3 +1,5 @@
 *.pyc
 *.swp
 etc/devices.cfg
+etc/device/*.cfg
+repository/

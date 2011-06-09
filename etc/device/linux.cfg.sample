@@ -1,0 +1,8 @@
+[linux]
+model           = pc_linux
+username        = ranrod
+password        = r4nr0d
+password_enable = r4nr0d
+hostname        = 192.168.213.148
+connect         = tcp/telnet
+enable          = yes

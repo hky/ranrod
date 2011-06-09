@@ -1,0 +1,6 @@
+[junos]
+model           = juniper_junos
+username        = ranrod
+password        = r4nr0d
+hostname        = 192.168.213.66
+connect         = tcp/ssh, tcp/telnet

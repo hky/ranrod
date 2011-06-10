@@ -1,0 +1,3 @@
+[submodule "etc/models"]
+	path = etc/models
+	url = https://tehmaze@github.com/tehmaze/ranrod-models.git

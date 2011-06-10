@@ -102,7 +102,7 @@ def record(device):
             for line in data.split('\n'):
                 skip = False
                 for pattern in device.ignores:
-                    if pattern.search(data):
+                    if pattern.search(line):
                         skip = True
                         break
 
@@ -112,7 +112,7 @@ def record(device):
                 for pattern, replace in device.filters:
                     for match in pattern.finditer(line):
                         for item in match.groups():
-                            line = line.replace(item, replace or '*' * 8, 1)
+                            line = line.replace(item, replace or '<removed>', 1)
                 
                 output.append(line)
 
@@ -319,8 +319,8 @@ class Device(object):
     def cmd_filter(self, pattern, replace=None):
         '''
         Filter out the given ``pattern`` from :py:func:`command` output. If
-        ``replace`` is ommitted, the matched groups will be replaced by eight
-        asterisks (``********``).
+        ``replace`` is ommitted, the matched groups will be replaced by string
+        (``<removed>``).
 
         Only matches in regular expression groups will be replaced, not the
         entire pattern!

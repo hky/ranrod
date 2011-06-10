@@ -40,10 +40,10 @@ with connect(device) as remote:
             device.config.password_enable)
         #expect(r'^Last login:.*',
         #    lambda *line: command('export PS1="\u\$ "'))
-    
+
         # Wait for prompt
         prompt()
-    
+
         # Disable pager
         command('export PAGER=/bin/cat')
 
@@ -52,7 +52,7 @@ with connect(device) as remote:
         record(output, command('uname -a'))
         
         # Become privileged user, if configured
-        if device.config.enable:
+        if device.config.get('enable'):
             log('Switching to enabled mode')
             prompt(pattern(r'^\S+[#]$'))
             command('sudo -i')

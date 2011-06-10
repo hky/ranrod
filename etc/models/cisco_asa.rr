@@ -56,12 +56,17 @@ with connect(device) as remote:
             device.config.username)
         expect(r'^[pP]assword:',
             device.config.password)
-    
+
+
         # Wait for prompt
         command('')
-        
+
         # Enable session
-        command('enable')
+        if device.config.get('enable'):
+            log('Switching to enabled mode')
+            expect(r'^enable password:',
+                device.config.enable_password)
+            command('enable')
 
         # Disable pager
         command('terminal length 0')

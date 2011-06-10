@@ -31,12 +31,16 @@ class Repository(object):
 
         if not self.check():
             self.init()
-    
-    def open(self, name, mode='r'):
+
+    def join(self, name):
         path = os.path.abspath(os.path.join(self.path, name))
-        base = os.path.dirname(path)
         if not path.startswith(self.path):
             raise RepositoryError('Path outside repository')
+        return path
+
+    def open(self, name, mode='r'):
+        path = self.join(name)
+        base = os.path.dirname(path)
         if not os.path.isdir(base):
             os.makedirs(base)
         return open(path, mode)
@@ -67,18 +71,30 @@ class Repository(object):
             raise RepositoryError(data[1] or data[0])
         else:
             return data[0]
-    
+
+    def diff(self):
+        command = self.extra.get('diff') % {
+            'root': self.path,
+        }
+        return self.execute(command)
+
+    def diff_last(self):
+        command = self.extra.get('diff-last') % {
+            'root': self.path,
+        }
+        return self.execute(command)
+
     def file_add(self, path, message='update'):
         if not self.extra.get('file-add'):
             # Repository does not support per-file add (or not required)
             return
 
         command = self.extra.get('file-add') % {
-            'root': self.path, 
+            'root': self.path,
             'path': path,
             'message': message,
         }
-        print self.execute(command)
+        return self.execute(command)
 
     def file_commit(self, path, message='update', user='ranrod'):
         if not self.extra.get('file-commit'):
@@ -91,7 +107,21 @@ class Repository(object):
             'message': message,
             'user': user,
         }
-        print self.execute(command)
+        return self.execute(command)
+
+    def file_diff(self, path):
+        command = self.extra.get('file-diff') % {
+            'root': self.path,
+            'path': path,
+        }
+        return self.execute(command)
+
+    def file_diff_last(self, path):
+        command = self.extra.get('file-diff-last') % {
+            'root': self.path,
+            'path': path,
+        }
+        return self.execute(command)
 
     def init(self):
         print 'Initializing repository in', self.path
@@ -99,4 +129,4 @@ class Repository(object):
             'path': self.path,
         }
         print 'Executing:', repr(command)
-        print self.execute(command)
+        return self.execute(command)

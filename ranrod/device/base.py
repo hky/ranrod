@@ -76,7 +76,7 @@ def record(device):
                 output = func()
             else:
                 output = func
-            
+
             # Get rid of funky line endings
             output = '\n'.join(map(lambda s: s.strip('\r'), output.split('\n')))
             log.write(self.filtered(output))
@@ -90,7 +90,7 @@ def record(device):
             if not isinstance(pattern, RE_TYPE):
                 pattern = re.compile(pattern, re.M)
             device.filters.append((pattern, replace))
-        
+
         @staticmethod
         def ignore(pattern):
             if not isinstance(pattern, RE_TYPE):
@@ -113,7 +113,7 @@ def record(device):
                     for match in pattern.finditer(line):
                         for item in match.groups():
                             line = line.replace(item, replace or '<removed>', 1)
-                
+
                 output.append(line)
 
             return '\n'.join(output)
@@ -226,19 +226,19 @@ class Device(object):
             'pattern': self.cmd_pattern,
             'prompt':  self.cmd_prompt,
         })
-    
+
     def cmd_capture(self, pattern, *names):
         '''
-        Allows to capture pattern matches to variables available in the 
+        Allows to capture pattern matches to variables available in the
         script.
-        
+
         TODO: Also exclude builtins etc.
         '''
 
         reserved = []
         reserved.extend(self.environ.keys())
         reserved.extend(dir(__builtins__))
-        
+
         def capture(line, match):
             info = match.groupdict()
             if not info:

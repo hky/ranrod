@@ -23,25 +23,25 @@ class ConfigMap(object):
             self.config = config.config
         else:
             self.config = config
-    
+
     def __contains__(self, item):
         if hasattr(super(ConfigMap, self), 'config'):
             return item in self.config
         else:
             return False
-    
+
     def __iter__(self):
         return iter(self.config)
-        
+
     def __repr__(self):
         return repr(self.config)
-    
+
     def __getitem__(self, item):
         return self.config.get(item)
-    
+
     def __setitem__(self, item, value):
         self.config[item] = value
-    
+
     def __getattr__(self, attr):
         try:
             return self.config[attr]
@@ -66,7 +66,7 @@ class ConfigMap(object):
 
     def update(self, items):
         self.config.update(items)
-    
+
     def values(self):
         return self.config.values()
 

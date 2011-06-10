@@ -59,7 +59,7 @@ class Client(object):
         if self.address[1] == self.port:
             return '%s://%s' % (self.name, self.address[0])
         else:
-            return '%s://%s:%d' % (self.name, self.address[0], 
+            return '%s://%s:%d' % (self.name, self.address[0],
                 self.address[1])
 
     def connect(self):

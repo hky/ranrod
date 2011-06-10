@@ -17,16 +17,16 @@ class Status(object):
     def __init__(self, repository):
         self.repository = repository
         self.status     = []
-    
+
     def log(self, *args):
         self.status.append(args)
-    
+
     def device_up(self, device):
         '''
         Mark a device as up in the status log.
         '''
         self.log(device.name, device.hostname, 'up')
-        
+
     def device_down(self, device, reason=''):
         '''
         Mark a device as down in the status log, optionally pass a ``reason``.
@@ -49,3 +49,6 @@ class Status(object):
         log.close()
         self.repository.file_add(log.name, message='status update')
         self.repository.file_commit(log.name)
+
+    def diff(self):
+        return self.repository.diff_last_file(self.repository.join('status'))

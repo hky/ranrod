@@ -1,0 +1,59 @@
+;
+; Template for mercurial (hg), http://mercurial.selenic.com/
+;
+[template:mercurial]
+check           = .hg
+create          = hg init %(path)s
+clone           = hg clone %(url)s %(path)s
+diff            = hg diff
+diff-last       = hg diff --rev -2 --quiet
+file-add        = hg -R %(root)s add %(path)s
+file-diff       = hg -R %(root)s diff %(path)s
+file-diff-last  = hg -R %(root)s diff --rev -2 --quiet %(path)s
+delete          = hg -R %(root)s remove --force %(path)s
+commit          = hg -R %(root)s commit --user "%(user)s" --message "%(message)s" %(path)s
+
+[template:hg]
+@template:mercurial
+
+;
+; Template for git, http://git-scm.com/
+;
+[template:git]
+check           = .git
+create          = git init %(path)s
+clone           = git clone %(url)s %(path)s
+diff            = git diff
+diff-last       = git diff @{1}
+file-add        = git --git-dir=%(root)s/.git --work-tree=%(root)s add %(path)s
+file-commit     = git --git-dir=%(root)s/.git --work-tree=%(root)s commit --message="%(message)s" %(path)s
+file-diff       = git --git-dir=%(root)s/.git --work-tree=%(root)s diff --color=never %(path)s
+file-diff-last  = git --git-dir=%(root)s/.git --work-tree=%(root)s diff --color=never HEAD^ -- %(path)s
+delete          = git --git-dir=%(root)s/.git --work-tree=%(root)s rm --force %(path)s
+commit          = git --git-dir=%(root)s/.git --work-tree=%(root)s commit --message="%(message)s" --all
+
+;
+; Template for subversion (svn), http://subversion.tigris.org/
+;
+[template:subversion]
+check           = .svn
+create          = svnadmin create %(path)s
+clone           = svn checkout %(url)s %(path)s
+diff            = svn diff
+diff-last       = svn diff --revision -2
+file-add        = svn add %(path)s
+file-diff       = svn diff %(path)s
+file-diff-last  = svn diff --revision -2 %(path)s
+delele          = svn del %(path)s
+commit          = svn commit --message "%(message)" %(path)s
+
+[template:svn]
+@template:subversion
+
+;
+; Repository configuration
+;
+[repository]
+; default: use mercurial
+@template:mercurial
+path            = '../repository'

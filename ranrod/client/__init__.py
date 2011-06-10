@@ -33,7 +33,7 @@ SERVICE_MAP = dict(
 def get_service(desc):
     '''
     Get port info from a service description, handles either:
-    
+
         * <proto>/<name>
         * tcp/ssh
         * <proto>/<name>:port
@@ -56,7 +56,7 @@ def get_service(desc):
 def try_connect(config, name, repository):
     if type(config.connect) != list:
         config.connect = [config.connect]
-    
+
     for method in config.connect:
         factory, port = get_service(method)
         config.address = (config.hostname, port)
@@ -73,7 +73,7 @@ def try_connect(config, name, repository):
                 return device
         finally:
             pass # device.close()
-    
+
     raise DeviceError('No suitable connections available')
 
 

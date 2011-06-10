@@ -60,7 +60,7 @@ class SSH(Client):
             self.remote = self.transport.invoke_shell()
         except socket.error, e:
             raise ClientConnectionError(e)
-        
+
     def close(self):
         self.remote.close()
         self.transport.close()

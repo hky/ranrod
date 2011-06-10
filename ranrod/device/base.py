@@ -14,6 +14,7 @@ __license__   = 'MIT'
 
 
 import datetime
+import os
 import parser
 import re
 import traceback
@@ -41,7 +42,8 @@ class DeviceDumper(object):
 
     def __enter__(self):
         self.device.cmd_log('Device log starting')
-        self.log = self.device.repository.open(self.device.name, 'w')
+        filename = os.path.join('config', self.device.name)
+        self.log = self.device.repository.open(filename, 'w')
         return self
 
     def __exit__(self, exc_type, exc_value, tb):

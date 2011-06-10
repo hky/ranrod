@@ -80,7 +80,7 @@ class Repository(object):
         }
         print self.execute(command)
 
-    def file_commit(self, path, message, user='ranrod'):
+    def file_commit(self, path, message='update', user='ranrod'):
         if not self.extra.get('file-commit'):
             # Repository does not support per-file commit (or not required)
             return

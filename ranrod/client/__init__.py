@@ -20,7 +20,7 @@ import re
 from ranrod.client.base import ClientError
 from ranrod.client.telnet import Telnet
 from ranrod.client.ssh import SSH
-from ranrod.device.base import Device
+from ranrod.device.base import Device, DeviceError
 
 
 PROTOCOL_RE = re.compile(r'^(?P<proto>tcp|udp)/(?P<name>\w+):?(?P<port>\d*)$')
@@ -73,6 +73,8 @@ def try_connect(config, name, repository):
                 return device
         finally:
             pass # device.close()
+    
+    raise DeviceError('No suitable connections available')
 
 
 if __name__ == '__main__':

@@ -54,6 +54,7 @@ class SSH(Client):
                 username = self.config.username,
                 password = self.config.password,
                 key_filename = ssh_keyfile and [ssh_keyfile] or None,
+                timeout = self.config.timeout,
             )
             # Request a shell SSH channel
             self.remote = self.transport.invoke_shell()

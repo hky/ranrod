@@ -1,5 +1,9 @@
+;
 ; All paths are relative to the location of this configuration file
-< repository/template.cfg
+;
+
+; Load repository templates
+< repository.cfg
 
 [paths]
 repository  = repository.cfg

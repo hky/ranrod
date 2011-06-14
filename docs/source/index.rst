@@ -6,11 +6,12 @@
 RANROD
 ======
 
-RANROD is a router config differ and collector inspired by RANCID_. While RANCID_
-is a cool product, it just lacks the flexibility and ease of extending it for
-other purposes than grabbing Cisco configurations. Also, it's mostly written in
-Perl and Bash, compiled into a giant pile of seperate scripts to do a relative
-easy job. RANROD intends to be more flexible, yet easier to maintain and use.
+RANROD is a router config differ and collector inspired by RANCID_. While
+RANCID_ is a cool product, it just lacks the flexibility and ease of extending
+it for other purposes than grabbing Cisco configurations. Also, it's mostly
+written in Perl and Bash, compiled into a giant pile of seperate scripts to do
+a relative easy job. RANROD intends to be more flexible, yet easier to maintain
+and use.
 
 All you need to run RANROD is a Python_ interpreter, Paramiko_ SSH client
 libraries and some version control tools of your choice!
@@ -39,6 +40,17 @@ a tarball from the repository and run a development release:
 .. _ranrod.zip: https://github.com/tehmaze/ranrod/zipball/master
 .. _ranrod-models.tgz: https://github.com/tehmaze/ranrod-models/tarball/master
 .. _ranrod-models.zip: https://github.com/tehmaze/ranrod-models/zipball/master
+
+Support / Bugs
+==============
+
+If you encounter any issues or bugs using RANROD, or if you have a feature
+request or want to propose an enhancement, please use the following issue
+trackers:
+
+  * `RANROD (core) issues <https://github.com/tehmaze/ranrod/issues>`.
+
+  * `RANROD models issues <https://github.com/tehmaze/ranrod-models/issues>`.
 
 
 Documentation

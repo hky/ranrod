@@ -22,10 +22,10 @@ from ranrod.repository import Repository
 from ranrod.status import Status
 
 
-def fix_path(options, path):
+def fix_path(root, path):
     if not path.startswith('/'):
         return os.path.abspath(os.path.join(
-            os.path.dirname(options.config), path))
+            os.path.dirname(root), path))
     else:
         return os.path.abspath(path)
 
@@ -49,7 +49,7 @@ def run():
     if type(device_paths) != list:
         device_paths = [device_paths]
     for path in device_paths:
-        path = fix_path(options, path)
+        path = fix_path(options.config, path)
         for filename in glob.glob(path):
             device_files.append(filename)
 
@@ -59,7 +59,8 @@ def run():
 
     # Setup repository
     repository_section = config.get_section('repository')
-    repository_section['path'] = fix_path(options, repository_section.get('path'))
+    repository_section['path'] = fix_path(options.config,
+        repository_section.get('path'))
     repository = Repository(**repository_section)
 
     # Setup status logger
@@ -67,7 +68,7 @@ def run():
 
     # Setup devices
     devices = []
-    model_path = fix_path(options, config.get('devices', 'models'))
+    model_path = fix_path(options.config, config.get('devices', 'models'))
     for filename in device_files:
         devices_config = Config(filename)
         for name in devices_config.get_sections():
@@ -75,8 +76,7 @@ def run():
             device.name = name
             print repr(device)
             if not device.model.startswith('/'):
-                device.model = os.path.join(model_path,
-                    device.model + '.rr')
+                device.model = fix_path(model_path, device.model)
             try:
                 remote = try_connect(device, name, repository)
             except Exception, e:

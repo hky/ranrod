@@ -1,5 +1,6 @@
 *.pyc
 *.swp
+docs/build/
 etc/devices.cfg
 etc/device/*.cfg
 etc/ranrod.cfg

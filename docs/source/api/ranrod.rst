@@ -31,5 +31,6 @@ Subpackages
 .. toctree::
 
     ranrod.client
+    ranrod.client.protocol
     ranrod.device
 

@@ -17,6 +17,14 @@ client Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`error` Module
+-------------------
+
+.. automodule:: ranrod.client.error
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`constants` Module
 -----------------------
 
@@ -24,12 +32,3 @@ client Package
     :members:
     :undoc-members:
     :show-inheritance:
-
-:mod:`telnet` Module
---------------------
-
-.. automodule:: ranrod.client.telnet
-    :members:
-    :undoc-members:
-    :show-inheritance:
-

@@ -51,5 +51,4 @@ Contents:
 
    usage
    config/index
-   api
    api/modules

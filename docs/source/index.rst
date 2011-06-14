@@ -48,9 +48,9 @@ If you encounter any issues or bugs using RANROD, or if you have a feature
 request or want to propose an enhancement, please use the following issue
 trackers:
 
-  * `RANROD (core) issues <https://github.com/tehmaze/ranrod/issues>`.
+  * `RANROD (core) issues <https://github.com/tehmaze/ranrod/issues>`_
 
-  * `RANROD models issues <https://github.com/tehmaze/ranrod-models/issues>`.
+  * `RANROD models issues <https://github.com/tehmaze/ranrod-models/issues>`_
 
 
 Documentation

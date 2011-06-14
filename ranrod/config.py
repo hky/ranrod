@@ -18,6 +18,10 @@ import re
 
 
 class ConfigMap(object):
+    '''
+    Configuration map, makes a ``dict`` act like an object.
+    '''
+
     def __init__(self, config={}):
         if isinstance(config, ConfigMap):
             self.config = config.config
@@ -72,6 +76,14 @@ class ConfigMap(object):
 
 
 class Config(object):
+    '''
+    Configuration file parser.
+    
+    :param filename: path to configuration file
+    :param parse: boolean indicating if the file should be parsed immediately
+    :param multi: boolean indicating if multi-value items are allowed
+    '''
+    
     re_regexp = re.compile(r'^/(?P<regexp>.*)/(?P<flags>[igm]*)')
 
     def __init__(self, filename, parse=True, multi=False):
@@ -132,23 +144,34 @@ class Config(object):
     def add_section(self, section, defaults=None):
         '''
         Add a ``section`` if it does not exist already.
+        
+        :param section: name of the section
+        :param defaults: default value
         '''
         if not section in self.sections:
             self.set_section(section, defaults)
 
     def get_section(self, section):
-        if not section in self.sections:
-            raise ValueError('Section "%s" does not exist.' % (section,))
-        else:
-            return self.sections[section]
+        '''
+        Get all key-value pairs for a section.
+        
+        :param section: name of the section
+        '''
+        return self[section]
 
     def get_sections(self):
+        '''
+        Get all section names.
+        '''
         return [s for s in self.sections if s != 'global']
 
     def set_section(self, section, defaults=None):
         '''
         Set a ``section`` to its ``defaults``, defaults to an empty ``dict``
         if the ``defaults`` parameter is omitted.
+        
+        :param section: name of the section
+        :param defaults: default values for the section
         '''
         if defaults is None:
             self.sections[section] = {}
@@ -221,6 +244,11 @@ class Config(object):
                     (self.filename, lineno, line))
 
     def parse_value(self, value):
+        '''
+        Parse a single section value.
+        
+        :param value: string value that need to be parsed
+        '''
         value = value.strip()
 
         # Booleans

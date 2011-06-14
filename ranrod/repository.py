@@ -23,23 +23,40 @@ class RepositoryError(Exception):
 
 
 class Repository(object):
-    def __init__(self, path, **extra):
+    '''
+    Repository handling.
+    
+    :param path: path to the repository
+    :param config: repository configuration
+    '''
+    def __init__(self, path, **config):
         self.path = os.path.abspath(path)
         if type(self.path) is unicode:
             self.path = self.path.encode('utf-8')
-        self.extra = extra
+        self.config = config
 
         if not self.check():
             self.init()
 
-    def join(self, name):
-        path = os.path.abspath(os.path.join(self.path, name))
+    def join(self, filename):
+        '''
+        Internal function to get a full path to a given file
+        
+        :param filename: input file name
+        '''
+        path = os.path.abspath(os.path.join(self.path, filename))
         if not path.startswith(self.path):
             raise RepositoryError('Path outside repository')
         return path
 
-    def open(self, name, mode='r'):
-        path = self.join(name)
+    def open(self, filename, mode='r'):
+        '''
+        Opens a file within the repository.
+        
+        :param filename: input file name
+        :param mode: file open mode as in :py:func:`open`
+        '''
+        path = self.join(filename)
         base = os.path.dirname(path)
         if not os.path.isdir(base):
             os.makedirs(base)
@@ -49,12 +66,14 @@ class Repository(object):
         '''
         Check if the repository ``check``-file/directory exists.
         '''
-        path = os.path.join(self.path, self.extra.get('check'))
+        path = os.path.join(self.path, self.config.get('check'))
         return os.path.exists(path)
 
     def execute(self, *command):
         '''
         Execute a shell command.
+        
+        :param command: command to execute in a shell
         '''
         if len(command) == 1 and isinstance(command[0], basestring):
             if type(command[0]) == unicode:
@@ -73,23 +92,23 @@ class Repository(object):
             return data[0]
 
     def diff(self):
-        command = self.extra.get('diff') % {
+        command = self.config.get('diff') % {
             'root': self.path,
         }
         return self.execute(command)
 
     def diff_last(self):
-        command = self.extra.get('diff-last') % {
+        command = self.config.get('diff-last') % {
             'root': self.path,
         }
         return self.execute(command)
 
     def file_add(self, path, message='update'):
-        if not self.extra.get('file-add'):
+        if not self.config.get('file-add'):
             # Repository does not support per-file add (or not required)
             return
 
-        command = self.extra.get('file-add') % {
+        command = self.config.get('file-add') % {
             'root': self.path,
             'path': path,
             'message': message,
@@ -97,11 +116,11 @@ class Repository(object):
         return self.execute(command)
 
     def file_commit(self, path, message='update', user='ranrod'):
-        if not self.extra.get('file-commit'):
+        if not self.config.get('file-commit'):
             # Repository does not support per-file commit (or not required)
             return
 
-        command = self.extra.get('file-commit') % {
+        command = self.config.get('file-commit') % {
             'root': self.path,
             'path': path,
             'message': message,
@@ -110,14 +129,14 @@ class Repository(object):
         return self.execute(command)
 
     def file_diff(self, path):
-        command = self.extra.get('file-diff') % {
+        command = self.config.get('file-diff') % {
             'root': self.path,
             'path': path,
         }
         return self.execute(command)
 
     def file_diff_last(self, path):
-        command = self.extra.get('file-diff-last') % {
+        command = self.config.get('file-diff-last') % {
             'root': self.path,
             'path': path,
         }
@@ -125,7 +144,7 @@ class Repository(object):
 
     def init(self):
         print 'Initializing repository in', self.path
-        command = self.extra.get('create') % {
+        command = self.config.get('create') % {
             'path': self.path,
         }
         print 'Executing:', repr(command)

@@ -19,20 +19,9 @@ import parser
 import re
 import traceback
 from ranrod.config import ConfigMap
-from ranrod.client.base import ClientError
+from ranrod.client import ClientError
 from ranrod.device.constants import *
 from ranrod.device.logger import DeviceLogger
-
-
-class DeviceError(Exception):
-    '''
-    Error indicating that the device generated an error.
-    '''
-    pass
-
-
-class DeviceConfigError(DeviceError):
-    pass
 
 
 class DeviceDumper(object):

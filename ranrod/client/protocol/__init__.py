@@ -19,8 +19,8 @@ __all__ = ['get_service', 'try_connect']
 import re
 from ranrod.client.error import *
 from ranrod.device.error import *
-from ranrod.client.protocol.telnet import Telnet
-from ranrod.client.protocol.ssh import SSH
+from ranrod.client.telnet import Telnet
+from ranrod.client.ssh import SSH
 
 
 PROTOCOL_RE = re.compile(r'^(?P<proto>tcp|udp)/(?P<name>\w+):?(?P<port>\d*)$')

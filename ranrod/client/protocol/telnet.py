@@ -17,7 +17,7 @@ import io
 import select
 import socket
 from ranrod.client.base import Client
-from ranrod.client.base import ClientError, ClientTimeout
+from ranrod.client.error import ClientError, ClientTimeout, ClientConnectionError
 from ranrod.client.constants import *
 from ranrod.util.hexdump import HexDump
 
@@ -26,12 +26,12 @@ class Telnet(Client):
     '''
     Telnet client implementing (partially):
 
-        * RFC854, Telnet protocol specification
-        * RFC855, Telnet option specification
-        * RFC857, Telnet echo option
-        * RFC858, Telnet supress-go-ahead option
-        * RFC1079, Telnet terminal speed option
-        * RFC1091, Telnet terminal-type option
+        * `RFC854 <../rfc/rfc854.txt>`_, Telnet protocol specification
+        * `RFC855 <../rfc/rfc855.txt>`_, Telnet option specification
+        * `RFC857 <../rfc/rfc857.txt>`_, Telnet echo option
+        * `RFC858 <../rfc/rfc858.txt>`_, Telnet supress-go-ahead option
+        * `RFC1079 <../rfc/rfc1079.txt>`_, Telnet terminal speed option
+        * `RFC1091 <../rfc/rfc1091.txt>`_, Telnet terminal-type option
 
     '''
 
@@ -56,12 +56,21 @@ class Telnet(Client):
         self.IACByte = None
 
     def connect(self):
+        '''
+        Establish a connection to the device.
+        
+        :raises: :class:`ClientConnectionError`
+        '''
         print 'Connecting to', self.address
         self.remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.remote.settimeout(self.config.timeout)
-        self.remote.connect(self.address)
-        self.send(IAC, DONT, ECHO)
-        self.send(IAC, WILL, ECHO)
+        try:
+            self.remote.connect(self.address)
+        except socket.error, e:
+            raise ClientConnectionError(e)
+        else:
+            self.send(IAC, DONT, ECHO)
+            self.send(IAC, WILL, ECHO)
 
     def echo(self, enabled):
         if enabled:
@@ -70,6 +79,15 @@ class Telnet(Client):
             self.send(IAC, DONT, ECHO)
 
     def send(self, *args, **kwargs):
+        '''
+        Send data to remote.
+        
+        :param args: values to send
+        
+        Optionally:
+        
+        :param timeout: send timeout (in seconds)
+        '''
         data = ''.join(args)
         timeout = kwargs.get('timeout', self.config.timeout)
         #print '>>>'; self.debug(data)
@@ -81,9 +99,25 @@ class Telnet(Client):
             self.remote.settimeout(oldtimeout)
 
     def sendline(self, line, timeout=None):
+        '''
+        Send line to remote.
+        
+        :param line: line to send
+        '''
         self.send(line, CR, LF, timeout=timeout)
 
     def read(self, size=1024, timeout=None):
+        '''
+        Read data from remote.
+        
+        :param size: number of bytes to read
+
+        Optionally:
+        
+        :param timeout: send timeout (in seconds)
+        
+        :returns: read data
+        '''
         oldtimeout = self.remote.gettimeout()
         self.remote.settimeout(timeout or self.config.timeout)
         try:
@@ -94,6 +128,15 @@ class Telnet(Client):
         return data
 
     def readloop(self, callback, timeout=None):
+        '''
+        Keep reading data until the remote is exhausted.
+        
+        :param callback: callback to call once data is received
+        
+        Optionally:
+        
+        :param timeout: send timeout (in seconds)
+        '''
         timeout = timeout or self.config.timeout
         chunk = ''
 

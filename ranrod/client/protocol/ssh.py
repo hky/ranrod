@@ -17,7 +17,7 @@ import io
 import paramiko
 import socket
 from ranrod.client.base import Client
-from ranrod.client.base import ClientError, ClientTimeout, ClientConnectionError
+from ranrod.client.error import ClientError, ClientTimeout, ClientConnectionError
 from ranrod.client.constants import *
 from ranrod.util.hexdump import HexDump
 
@@ -43,6 +43,11 @@ class SSH(Client):
         self.buffer = ''
 
     def connect(self):
+        '''
+        Establish a connection to the device.
+        
+        :raises: :class:`ClientConnectionError`
+        '''
         self.transport = paramiko.SSHClient()
         # Automatically accept fresh host keys
         self.transport.set_missing_host_key_policy(paramiko.AutoAddPolicy())

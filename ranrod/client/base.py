@@ -14,28 +14,8 @@ __license__   = 'MIT'
 
 
 from ranrod.client.constants import CR, LF
+from ranrod.client.error import *
 from ranrod.config import ConfigMap
-
-
-class ClientError(Exception):
-    '''
-    Error indicating that an error on the network has occurred.
-    '''
-    pass
-
-
-class ClientTimeout(ClientError):
-    '''
-    Error indicating that a timeout on the network has occurred.
-    '''
-    pass
-
-
-class ClientConnectionError(ClientError):
-    '''
-    Error indicating that an error on the network connection has occurred.
-    '''
-    pass
 
 
 class Client(object):

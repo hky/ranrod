@@ -19,6 +19,7 @@ __all__ = ['get_service', 'try_connect']
 import re
 from ranrod.client.error import *
 from ranrod.device.error import *
+from ranrod.device.base import Device
 from ranrod.client.protocol.telnet import Telnet
 from ranrod.client.protocol.ssh import SSH
 

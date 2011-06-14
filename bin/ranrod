@@ -18,14 +18,16 @@ import os
 from ranrod.config import Config, ConfigMap
 from ranrod.client import try_connect
 from ranrod.device import Device
+from ranrod.logger import Logger
 from ranrod.repository import Repository
 from ranrod.status import Status
 
 
 def fix_path(root, path):
+    if os.path.isfile(root):
+        root = os.path.dirname(root)
     if not path.startswith('/'):
-        return os.path.abspath(os.path.join(
-            os.path.dirname(root), path))
+        return os.path.abspath(os.path.join(root, path))
     else:
         return os.path.abspath(path)
 
@@ -37,19 +39,36 @@ def run():
     parser.add_option('-c', '--config', dest='config',
         default='etc/ranrod.cfg',
         help='location of the main configuration file')
+    parser.add_option('-d', '--debug', dest='debug',
+        action='store_true', default=False,
+        help='enable debugging')
+    parser.add_option('-D', '--devices', dest='devices',
+        help='only parse these device configuration(s)')
 
     options, args = parser.parse_args()
 
     # Parse main configuration
     config = Config(options.config)
+    if options.debug:
+        config.set('log', 'level', 'debug', override=True)
+    
+    print config.get_section('log')
+
+    # Open log file
+    log = Logger(config=config.get_section('log', {}))
 
     # Parse devices configuration
     device_files = []
-    device_paths = config.get('devices', 'load')
-    if type(device_paths) != list:
-        device_paths = [device_paths]
+    if options.devices:
+        device_paths = map(os.path.abspath, options.devices.split(','))
+    else:
+        device_paths = config.get('devices', 'load')
+        if type(device_paths) != list:
+            device_paths = [device_paths]
+
     for path in device_paths:
         path = fix_path(options.config, path)
+        log('Loading device configuration from %s' % (path,), level='debug')
         for filename in glob.glob(path):
             device_files.append(filename)
 
@@ -69,6 +88,7 @@ def run():
     # Setup devices
     devices = []
     model_path = fix_path(options.config, config.get('devices', 'models'))
+    log('Using models from %s' % (model_path,), level='debug')
     for filename in device_files:
         devices_config = Config(filename)
         for name in devices_config.get_sections():
@@ -77,10 +97,13 @@ def run():
             print repr(device)
             if not device.model.startswith('/'):
                 device.model = fix_path(model_path, device.model)
+            
+            log('Handling device %s (model %s)' % (name, device.model))
             try:
                 remote = try_connect(device, name, repository)
             except Exception, e:
                 status.device_down(device, reason=str(e))
+                raise
             else:
                 status.device_up(device)
 

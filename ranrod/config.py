@@ -122,7 +122,7 @@ class Config(object):
             else:
                 return self.sections[section].get(key, default)
 
-    def set(self, section, key, value):
+    def set(self, section, key, value, override=False):
         '''
         Set the ``value`` for a ``key`` in the specified ``section``.
         '''
@@ -130,16 +130,13 @@ class Config(object):
             raise ValueError('Section "%s" does not exist.' % (section,))
         else:
             exists = self.sections[section].get(key, None)
-            if exists is None:
-                self.sections[section][key] = value
-            elif self.is_multi:
+            if exists and self.is_multi:
                 if type(exists) == list:
                     self.sections[section][key].append(value)
                 else:
                     self.sections[section][key] = [exists, value]
             else:
-                raise ValueError('Key "%s" in section "%s" already exists.' % \
-                    (section, key))
+                self.sections[section][key] = value
 
     def add_section(self, section, defaults=None):
         '''
@@ -151,13 +148,19 @@ class Config(object):
         if not section in self.sections:
             self.set_section(section, defaults)
 
-    def get_section(self, section):
+    def get_section(self, section, defaults=None):
         '''
         Get all key-value pairs for a section.
         
         :param section: name of the section
         '''
-        return self[section]
+        try:
+            return self[section]
+        except KeyError:
+            if defaults is not None:
+                return defaults
+            else:
+                raise
 
     def get_sections(self):
         '''

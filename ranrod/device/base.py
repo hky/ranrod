@@ -21,7 +21,7 @@ import traceback
 from ranrod.config import ConfigMap
 from ranrod.client import ClientError
 from ranrod.device.constants import *
-from ranrod.device.logger import DeviceLogger
+from ranrod.logger import Logger
 
 
 class DeviceDumper(object):
@@ -161,7 +161,7 @@ class Device(object):
         self.ignores = []
         self.expects = {}
         self.prompt = ''
-        self.logger = DeviceLogger(self)
+        self.logger = Logger()
         self.record = record(self)
         self.remote = None
 

@@ -68,13 +68,14 @@ different types the parser may evaluate:
    ====== ========================================================
    Type   Example
    ====== ========================================================
-   bool   ``yes``, ``true``, ``enable``
+   bool   ``yes``, ``true``, ``enable``,
           ``no``, ``false``, ``disabled``
    none   ``none``, ``null``
    int    ``42`` [#]_
    long   ``42``
    float  ``42.23``
-   regexp ``/test/``, ``/test/igm``
+   regexp ``/test/``,
+          ``/test/igm``
    list   ``42, /test/``
    ====== ========================================================
 
@@ -135,8 +136,72 @@ An example configuration may read:
    path      = ../repository
 
 
-etc/devices/*.cfg
-=================
+etc/devices/\*.cfg
+==================
 
 These are the device configurations which specify all parameters to connect
-to a device.
+to a device. A device configuration may specify multiple devices at once. You
+may group devices by giving them the same prefix followed by a slash ``/``:
+
+.. code-block:: cfg
+
+   [testing/router]
+   ...
+   
+   [testing/switch]
+   ...
+
+Directives
+----------
+
+.. data:: model
+
+   Defines what model file to use from the configuration.
+
+.. data:: username
+
+   Username to log in with (if applicable)
+
+.. data:: password
+
+   Password to log in with (if applicable)
+
+.. data:: password_enable
+
+   Password used to switch to administrative mode (if applicable)
+
+.. data:: hostname
+
+   Hostname or IP address to connect to
+
+.. data:: connect
+
+   Connect method(s) to be used
+
+.. data:: enable
+
+   Boolean to indicate wether or not to switch to administrative mode if
+   required by the model configuration. Some models can partially export
+   their configuration without the need to switch to administrative mode.
+
+Example
+-------
+
+An example:
+
+.. code-block:: cfg
+
+   [router]
+   ; Name of model file in devices -> models
+   model           = pc_zebra
+   ; Credentials for device
+   username        = ranrod
+   password        = r4nr0d
+   ; Enable/administrative password
+   password_enable = r4nr0d
+   ; Device address
+   hostname        = 192.168.213.148
+   ; Connection methods
+   connect         = tcp/telnet:2601
+   ; Switch to admin user?
+   enable          = yes

@@ -4,3 +4,6 @@
 [submodule "docs/theme/proBlue"]
 	path = docs/theme/proBlue
 	url = https://github.com/kellycreativetech/proBlue
+[submodule "docs/theme/ADC"]
+	path = docs/theme/ADC
+	url = https://github.com/coordt/ADCtheme.git

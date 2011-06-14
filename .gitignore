@@ -1,5 +1,6 @@
 *.pyc
 *.swp
+build/
 docs/build/
 etc/devices.cfg
 etc/device/*.cfg

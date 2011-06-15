@@ -61,7 +61,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   usage
+   device/index
+   usage/index
    config/index
    models/index
    api/modules
